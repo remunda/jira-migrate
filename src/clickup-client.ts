@@ -107,6 +107,76 @@ export class ClickUpClient {
     this.customFieldIdForExternalId = customFieldIdForExternalId;
   }
 
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 5,
+    initialDelayMs: number = 2000
+  ): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        lastError = error;
+        
+        // Check if it's a rate limit error
+        const isRateLimit = 
+          error.response?.status === 429 ||
+          error.response?.data?.err === "Rate limit reached" ||
+          error.response?.data?.ECODE === "APP_002";
+        
+        if (isRateLimit && attempt < maxRetries) {
+          const headers = error.response?.headers || {};
+          const rateLimitRemaining = headers['x-ratelimit-remaining'];
+          const rateLimitReset = headers['x-ratelimit-reset'];
+          
+          let delayMs = initialDelayMs * Math.pow(2, attempt);
+          
+          // If we have rate limit headers, use them for precise timing
+          if (rateLimitReset) {
+            const resetTime = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
+            const now = Date.now();
+            const waitTimeMs = resetTime - now;
+            
+            if (waitTimeMs > 0) {
+              const waitTimeMinutes = waitTimeMs / 60000;
+              
+              // If wait time is more than 1 minute, exit with error message
+              if (waitTimeMinutes > 1) {
+                const resetDate = new Date(resetTime);
+                const formattedTime = resetDate.toLocaleTimeString();
+                const formattedDate = resetDate.toLocaleDateString();
+                
+                throw new Error(
+                  `Rate limit exceeded. Please wait until ${formattedTime} on ${formattedDate} (${Math.ceil(waitTimeMinutes)} minutes) before retrying.`
+                );
+              }
+              
+              // Use the exact wait time from the header
+              delayMs = waitTimeMs + 1000; // Add 1 second buffer
+              console.warn(
+                `⚠️  Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s until reset at ${new Date(resetTime).toLocaleTimeString()}...`
+              );
+            }
+          } else {
+            console.warn(
+              `⚠️  Rate limit reached. Waiting ${delayMs / 1000}s before retry (attempt ${attempt + 1}/${maxRetries})...`
+            );
+          }
+          
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+        
+        // If it's not a rate limit error or we've exhausted retries, throw
+        throw error;
+      }
+    }
+    
+    throw lastError;
+  }
+
   async validateConnection(): Promise<boolean> {
     try {
       await this.client.get("/user");
@@ -117,25 +187,27 @@ export class ClickUpClient {
   }
 
   async createTask(payload: CreateTaskPayload): Promise<ClickUpTask> {
-    try {
-      console.log(
-        "Creating task with payload:",
-        JSON.stringify(payload, null, 2)
-      );
+    return this.retryWithBackoff(async () => {
+      try {
+        console.log(
+          "Creating task with payload:",
+          JSON.stringify(payload, null, 2)
+        );
 
-      const response = await this.client.post(
-        `/list/${this.listId}/task`,
-        payload
-      );
-      return response.data;
-    } catch (error: any) {
-      console.error(
-        "ClickUp API Error:",
-        error.response?.data || error.message
-      );
-      console.error("Payload that failed:", JSON.stringify(payload, null, 2));
-      throw error;
-    }
+        const response = await this.client.post(
+          `/list/${this.listId}/task`,
+          payload
+        );
+        return response.data;
+      } catch (error: any) {
+        console.error(
+          "ClickUp API Error:",
+          error.response?.data || error.message
+        );
+        console.error("Payload that failed:", JSON.stringify(payload, null, 2));
+        throw error;
+      }
+    });
   }
 
   async getTask(taskId: string): Promise<ClickUpTask> {
@@ -175,8 +247,10 @@ export class ClickUpClient {
     taskId: string,
     payload: UpdateTaskPayload
   ): Promise<ClickUpTask> {
-    const response = await this.client.put(`/task/${taskId}`, payload);
-    return response.data;
+    return this.retryWithBackoff(async () => {
+      const response = await this.client.put(`/task/${taskId}`, payload);
+      return response.data;
+    });
   }
 
   async searchTasksByCustomField(externalId: string): Promise<ClickUpTask[]> {
@@ -310,8 +384,10 @@ export class ClickUpClient {
   }
 
   async addTaskComment(taskId: string, comment: string): Promise<void> {
-    await this.client.post(`/task/${taskId}/comment`, {
-      comment_text: comment,
+    return this.retryWithBackoff(async () => {
+      await this.client.post(`/task/${taskId}/comment`, {
+        comment_text: comment,
+      });
     });
   }
 
@@ -320,8 +396,10 @@ export class ClickUpClient {
     fieldId: string,
     value: any
   ): Promise<void> {
-    await this.client.post(`/task/${taskId}/field/${fieldId}`, {
-      value,
+    return this.retryWithBackoff(async () => {
+      await this.client.post(`/task/${taskId}/field/${fieldId}`, {
+        value,
+      });
     });
   }
 
@@ -330,14 +408,16 @@ export class ClickUpClient {
     fileBuffer: Buffer,
     filename: string
   ): Promise<void> {
-    const FormData = require("form-data");
-    const formData = new FormData();
-    formData.append("attachment", fileBuffer, filename);
+    return this.retryWithBackoff(async () => {
+      const FormData = require("form-data");
+      const formData = new FormData();
+      formData.append("attachment", fileBuffer, filename);
 
-    await this.client.post(`/task/${taskId}/attachment`, formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
+      await this.client.post(`/task/${taskId}/attachment`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+        },
+      });
     });
   }
 
