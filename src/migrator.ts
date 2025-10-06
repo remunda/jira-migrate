@@ -98,9 +98,20 @@ export class JiraToShortcutMigrator {
       external_id: jiraIssue.key,
     };
 
-    // Add labels
+    // Add labels including JIRA issue type
+    const labels: Array<{ name: string }> = [];
+    
+    // Add JIRA issue type as a tag with format jira:<type>
+    const issueTypeTag = `jira:${jiraIssue.fields.issuetype.name.toLowerCase().replace(/\s+/g, '-')}`;
+    labels.push({ name: issueTypeTag });
+    
+    // Add existing JIRA labels
     if (jiraIssue.fields.labels.length > 0) {
-      epic.labels = jiraIssue.fields.labels.map(label => ({ name: label }));
+      labels.push(...jiraIssue.fields.labels.map(label => ({ name: label })));
+    }
+    
+    if (labels.length > 0) {
+      epic.labels = labels;
     }
 
     // Try to map assignee
@@ -149,9 +160,20 @@ export class JiraToShortcutMigrator {
       story.iteration_id = iterationId;
     }
 
-    // Add labels
+    // Add labels including JIRA issue type
+    const labels: Array<{ name: string }> = [];
+    
+    // Add JIRA issue type as a tag with format jira:<type>
+    const issueTypeTag = `jira:${jiraIssue.fields.issuetype.name.toLowerCase().replace(/\s+/g, '-')}`;
+    labels.push({ name: issueTypeTag });
+    
+    // Add existing JIRA labels
     if (jiraIssue.fields.labels.length > 0) {
-      story.labels = jiraIssue.fields.labels.map(label => ({ name: label }));
+      labels.push(...jiraIssue.fields.labels.map(label => ({ name: label })));
+    }
+    
+    if (labels.length > 0) {
+      story.labels = labels;
     }
 
     // Try to map workflow state

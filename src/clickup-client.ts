@@ -25,6 +25,11 @@ export interface ClickUpTask {
     priority: string;
     color: string;
   };
+  attachments?: Array<{
+    id: string;
+    title: string;
+    url: string;
+  }>;
 }
 
 export interface ClickUpList {
@@ -72,6 +77,7 @@ export interface UpdateTaskPayload {
   };
   tags?: string[];
   priority?: number;
+  custom_item_id?: number; // Task type
 }
 
 export class ClickUpClient {
@@ -175,26 +181,110 @@ export class ClickUpClient {
 
   async searchTasksByCustomField(externalId: string): Promise<ClickUpTask[]> {
     if (!this.customFieldIdForExternalId) {
+      console.log("No custom field ID configured");
       return [];
     }
 
     try {
-      // ClickUp doesn't have a direct search by custom field, so we get all tasks and filter
-      const response = await this.client.get(`/list/${this.listId}/task`, {
+      // Try filtering with custom_fields parameter first
+      const customFieldsFilter = JSON.stringify([
+        {
+          field_id: this.customFieldIdForExternalId,
+          operator: "=",
+          value: externalId,
+        },
+      ]);
+
+      console.log(`Searching with custom_fields filter: ${customFieldsFilter}`);
+
+      let response = await this.client.get(`/list/${this.listId}/task`, {
         params: {
           include_closed: true,
-          custom_fields: JSON.stringify([
-            {
-              field_id: this.customFieldIdForExternalId,
-              operator: "=",
-              value: externalId,
-            },
-          ]),
+          custom_fields: customFieldsFilter,
+          subtasks: true, // Include subtasks in the search
         },
       });
 
-      return response.data.tasks || [];
-    } catch (error) {
+      let tasks: ClickUpTask[] = response.data.tasks || [];
+      console.log(`API returned ${tasks.length} task(s) with filter`);
+
+      // If no results with filter, try fetching all and filtering manually
+      if (tasks.length === 0) {
+        console.log(
+          "Filter returned 0 tasks, fetching all tasks and filtering manually..."
+        );
+        response = await this.client.get(`/list/${this.listId}/task`, {
+          params: {
+            include_closed: true,
+            subtasks: true, // Include subtasks in the search
+          },
+        });
+
+        const allTasks: ClickUpTask[] = response.data.tasks || [];
+        console.log(`Found ${allTasks.length} total tasks in list`);
+
+        // Fetch full details for each task to get custom field values
+        const tasksWithDetails = await Promise.all(
+          allTasks.map(async (task) => {
+            try {
+              return await this.getTask(task.id);
+            } catch (error) {
+              console.error(`Error fetching task ${task.id}:`, error);
+              return task; // Return original if fetch fails
+            }
+          })
+        );
+
+        tasks = tasksWithDetails.filter((task) => {
+          if (!task.custom_fields) {
+            console.log(`Task ${task.id}: no custom_fields`);
+            return false;
+          }
+
+          const externalIdField = task.custom_fields.find(
+            (cf) => cf.id === this.customFieldIdForExternalId
+          );
+
+          if (externalIdField) {
+            console.log(
+              `Task ${
+                task.id
+              }: external-id field found, full field: ${JSON.stringify(
+                externalIdField
+              )}`
+            );
+            // Check all possible locations for the value
+            const field = externalIdField as any;
+            const fieldValue =
+              field.value ??
+              field.text_value ??
+              field.string_value ??
+              field.default_value;
+            console.log(
+              `Extracted value: ${fieldValue}, checking against: ${externalId}`
+            );
+            return fieldValue === externalId;
+          } else {
+            console.log(
+              `Task ${
+                task.id
+              }: external-id field NOT found. Available fields: ${task.custom_fields
+                .map((cf) => `${cf.id}:${cf.name}`)
+                .join(", ")}`
+            );
+            return false;
+          }
+        });
+
+        console.log(`Manual filtering found ${tasks.length} matching task(s)`);
+      }
+
+      return tasks;
+    } catch (error: any) {
+      console.error(
+        "Error searching tasks by custom field:",
+        error.response?.data || error.message
+      );
       return [];
     }
   }

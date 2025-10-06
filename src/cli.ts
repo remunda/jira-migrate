@@ -14,6 +14,7 @@ interface MigrateOptions {
   currentIteration?: boolean;
   list?: string;
   parent?: string;
+  forceUpdate?: boolean;
 }
 
 interface BulkOptions {
@@ -24,6 +25,7 @@ interface BulkOptions {
   currentIteration?: boolean;
   list?: string;
   parent?: string;
+  forceUpdate?: boolean;
 }
 
 const program = new Command();
@@ -50,6 +52,7 @@ program
   .option('-c, --current-iteration', 'Assign to current iteration (Shortcut only)')
   .option('-l, --list <id>', 'Assign to specific list by ID (ClickUp only)')
   .option('-p, --parent <id>', 'Assign to parent task by ID (ClickUp only)')
+  .option('-u, --only-update', 'Only updates existing task, dont create new ones (skip if not found, ClickUp only)')
   .action(async (jiraKey: string, options: MigrateOptions) => {
     try {
       const config = loadConfig();
@@ -96,7 +99,7 @@ program
         }
 
         const migrationSpinner = ora(`Migrating ${jiraKey}...`).start();
-        const result = await migrator.migrateIssue(jiraKey, options.list, options.parent);
+        const result = await migrator.migrateIssue(jiraKey, options.list, options.parent, options.forceUpdate);
         
         if (result.success) {
           migrationSpinner.succeed(`Successfully migrated ${jiraKey}`);
@@ -180,6 +183,7 @@ program
   .option('-c, --current-iteration', 'Assign to current iteration (Shortcut only)')
   .option('-l, --list <id>', 'Assign to specific list by ID (ClickUp only)')
   .option('-p, --parent <id>', 'Assign to parent task by ID (ClickUp only)')
+  .option('-u, --force-update', 'Force update existing tasks only (skip if not found, ClickUp only)')
   .action(async (options: BulkOptions) => {
     try {
       let jiraKeys: string[] = [];
@@ -251,7 +255,7 @@ program
 
         console.log(chalk.blue(`\nMigrating ${jiraKeys.length} issues...\n`));
 
-        const results = await migrator.migrateBulk(jiraKeys, options.list, options.parent);
+        const results = await migrator.migrateBulk(jiraKeys, options.list, options.parent, options.forceUpdate);
         
         const successful = results.filter(r => r.success);
         const failed = results.filter(r => !r.success);
