@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from "axios";
 
 export interface ClickUpTask {
   id: string;
@@ -11,6 +11,10 @@ export interface ClickUpTask {
   assignees: Array<{ id: number; username: string; email: string }>;
   tags: Array<{ name: string; tag_fg: string; tag_bg: string }>;
   url: string;
+  list?: {
+    id: string;
+    name: string;
+  };
   custom_fields?: Array<{
     id: string;
     name: string;
@@ -51,6 +55,7 @@ export interface CreateTaskPayload {
   assignees?: number[];
   tags?: string[];
   priority?: number;
+  parent?: string;
   custom_fields?: Array<{
     id: string;
     value: any;
@@ -84,10 +89,10 @@ export class ClickUpClient {
     customFieldIdForExternalId?: string
   ) {
     this.client = axios.create({
-      baseURL: 'https://api.clickup.com/api/v2',
+      baseURL: "https://api.clickup.com/api/v2",
       headers: {
-        'Authorization': apiToken,
-        'Content-Type': 'application/json',
+        Authorization: apiToken,
+        "Content-Type": "application/json",
       },
     });
     this.teamId = teamId;
@@ -98,7 +103,7 @@ export class ClickUpClient {
 
   async validateConnection(): Promise<boolean> {
     try {
-      await this.client.get('/user');
+      await this.client.get("/user");
       return true;
     } catch (error) {
       return false;
@@ -107,12 +112,22 @@ export class ClickUpClient {
 
   async createTask(payload: CreateTaskPayload): Promise<ClickUpTask> {
     try {
-      console.log('Creating task with payload:', JSON.stringify(payload, null, 2));
-      const response = await this.client.post(`/list/${this.listId}/task`, payload);
+      console.log(
+        "Creating task with payload:",
+        JSON.stringify(payload, null, 2)
+      );
+
+      const response = await this.client.post(
+        `/list/${this.listId}/task`,
+        payload
+      );
       return response.data;
     } catch (error: any) {
-      console.error('ClickUp API Error:', error.response?.data || error.message);
-      console.error('Payload that failed:', JSON.stringify(payload, null, 2));
+      console.error(
+        "ClickUp API Error:",
+        error.response?.data || error.message
+      );
+      console.error("Payload that failed:", JSON.stringify(payload, null, 2));
       throw error;
     }
   }
@@ -122,7 +137,38 @@ export class ClickUpClient {
     return response.data;
   }
 
-  async updateTask(taskId: string, payload: UpdateTaskPayload): Promise<ClickUpTask> {
+  async validateParentTask(
+    parentTaskId: string,
+    targetListId?: string
+  ): Promise<{ valid: boolean; error?: string; task?: ClickUpTask }> {
+    try {
+      const task = await this.getTask(parentTaskId);
+      const effectiveListId = targetListId || this.listId;
+
+      // Check if parent task is in the same list
+      if (task.list?.id !== effectiveListId) {
+        return {
+          valid: false,
+          error: `Parent task (${parentTaskId}) is in list "${task.list?.name}" (${task.list?.id}) but you're creating tasks in list ${effectiveListId}. Parent and child tasks must be in the same list.`,
+          task,
+        };
+      }
+
+      return { valid: true, task };
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.err || error.message;
+
+      return {
+        valid: false,
+        error: `Failed to validate parent task ${parentTaskId}: ${errorMessage}`,
+      };
+    }
+  }
+
+  async updateTask(
+    taskId: string,
+    payload: UpdateTaskPayload
+  ): Promise<ClickUpTask> {
     const response = await this.client.put(`/task/${taskId}`, payload);
     return response.data;
   }
@@ -140,7 +186,7 @@ export class ClickUpClient {
           custom_fields: JSON.stringify([
             {
               field_id: this.customFieldIdForExternalId,
-              operator: '=',
+              operator: "=",
               value: externalId,
             },
           ]),
@@ -164,7 +210,7 @@ export class ClickUpClient {
   }
 
   async getCurrentUser(): Promise<ClickUpUser> {
-    const response = await this.client.get('/user');
+    const response = await this.client.get("/user");
     return response.data.user;
   }
 
@@ -179,16 +225,24 @@ export class ClickUpClient {
     });
   }
 
-  async setCustomField(taskId: string, fieldId: string, value: any): Promise<void> {
+  async setCustomField(
+    taskId: string,
+    fieldId: string,
+    value: any
+  ): Promise<void> {
     await this.client.post(`/task/${taskId}/field/${fieldId}`, {
       value,
     });
   }
 
-  async uploadAttachment(taskId: string, fileBuffer: Buffer, filename: string): Promise<void> {
-    const FormData = require('form-data');
+  async uploadAttachment(
+    taskId: string,
+    fileBuffer: Buffer,
+    filename: string
+  ): Promise<void> {
+    const FormData = require("form-data");
     const formData = new FormData();
-    formData.append('attachment', fileBuffer, filename);
+    formData.append("attachment", fileBuffer, filename);
 
     await this.client.post(`/task/${taskId}/attachment`, formData, {
       headers: {

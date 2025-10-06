@@ -67,6 +67,9 @@ CLICKUP_LIST_ID=your_list_id
 
 # Optional: for idempotent migrations (recommended)
 CLICKUP_EXTERNAL_ID_FIELD_ID=your_custom_field_id
+
+# Optional: assign all tasks to a parent by default
+CLICKUP_PARENT_TASK_ID=your_parent_task_id
 ```
 
 ### 3. Test Connection
@@ -245,6 +248,68 @@ Look for your field in response:
 CLICKUP_EXTERNAL_ID_FIELD_ID=abc123-def456-ghi789
 ```
 
+### Step 6: (Optional) Configure Parent Task
+
+If you want all migrated tasks to be assigned to a parent task (useful for organizing migrations under a common parent):
+
+**⚠️ Important: The parent task MUST be in the same list as the tasks you're creating!**
+
+**⚠️ Critical: You need the ACTUAL task ID, not the number in the URL!**
+
+**How to find the actual ClickUp task ID:**
+
+1. **Open the parent task** in ClickUp
+2. Look for the task ID displayed in the task (e.g., `DEV-41` if you have custom IDs enabled)
+3. **Double-click the task ID** - this will reveal the **actual task ID** (e.g., `86c5v9c20`)
+4. Copy this ID and use it for the `--parent` parameter
+
+**Important Notes:**
+- ❌ **DON'T use the number in the URL** (e.g., `90151715279` from `https://app.clickup.com/t/90151715279/DEV-41`) - this is NOT the task ID
+- ❌ **DON'T use the custom task ID** (e.g., `DEV-41`) - this won't work with the API
+- ✅ **DO use the actual task ID** (e.g., `86c5v9c20`) - double-click the displayed ID to see it
+
+**Example:**
+```
+Task URL: https://app.clickup.com/t/90151715279/DEV-41
+Displayed ID: DEV-41
+Actual Task ID (double-click to see): 86c5v9c20  ← Use this one!
+```
+
+**Method 2: From API**
+```bash
+# Search for the task by name in your target list
+curl "https://api.clickup.com/api/v2/list/YOUR_LIST_ID/task?search=Parent%20Task%20Name" \
+  -H "Authorization: YOUR_API_TOKEN"
+```
+
+The response will show the actual task ID in the `id` field:
+```json
+{
+  "tasks": [
+    {
+      "id": "86c5v9c20",
+      "custom_id": "DEV-41",
+      "name": "Parent Task Name",
+      ...
+    }
+  ]
+}
+```
+
+**In .env:**
+```env
+# Use the ACTUAL task ID (not the URL number or custom ID)
+CLICKUP_PARENT_TASK_ID=86c5v9c20
+```
+
+**Usage:**
+```bash
+# Using the actual task ID
+yarn dev migrate PROJ-123 --parent 86c5v9c20
+```
+
+**Validation:** The tool will automatically validate that the parent task exists and is in the correct list before creating subtasks. If validation fails, you'll get a clear error message.
+
 ---
 
 ## Configuration
@@ -266,6 +331,9 @@ CLICKUP_TEAM_ID=9876543
 CLICKUP_SPACE_ID=12345678
 CLICKUP_LIST_ID=87654321
 CLICKUP_EXTERNAL_ID_FIELD_ID=abc123-def456-ghi789
+
+# Optional: Default parent task
+CLICKUP_PARENT_TASK_ID=9abc123
 ```
 
 ### Switching Between Shortcut and ClickUp
@@ -304,11 +372,17 @@ yarn dev migrate PROJ-123 --dry-run
 # Migrate to specific list
 yarn dev migrate PROJ-123 --list 87654321
 
+# Assign to a parent task
+yarn dev migrate PROJ-123 --parent 9abc123
+
 # Migrate multiple issues
 yarn dev bulk --keys PROJ-123 PROJ-124 PROJ-125
 
 # Migrate from file
 yarn dev bulk --file jira-keys.txt
+
+# Bulk migration with parent task assignment
+yarn dev bulk --file keys.txt --parent 9abc123
 
 # Bulk migration with dry run
 yarn dev bulk --file keys.txt --dry-run
@@ -354,6 +428,7 @@ Each migrated task contains:
 - ✅ **Priority**: Mapped from JIRA priority (1-4 scale)
 - ✅ **Tags**: All JIRA labels
 - ✅ **Assignees**: Mapped by email address
+- ✅ **Parent Task**: Optional parent task assignment
 - ✅ **Custom Field**: JIRA key (if configured)
 
 ### Status Mapping
@@ -421,6 +496,69 @@ Default mapping:
 - Tool automatically delays 1 second between requests
 - ClickUp limit: 100 requests/minute
 - For large migrations (100+ items), expect ~2 minutes per 100 items
+
+### "Parent not child of list" error
+This error occurs when trying to assign a parent task that's not in the same list as the tasks being created.
+
+**Solution:**
+- The parent task MUST be in the same list as the tasks you're creating
+- If migrating to list `12345`, your parent task must also be in list `12345`
+- Create the parent task in the target list first, then use its ID
+
+**Example workflow:**
+```bash
+# 1. Create parent task in ClickUp UI in your target list
+# 2. Get the parent task ID (e.g., 90151715279 from URL)
+# 3. Verify parent is in same list:
+curl "https://api.clickup.com/api/v2/task/90151715279" \
+  -H "Authorization: YOUR_API_TOKEN"
+
+# 4. Run migration with parent
+yarn dev bulk --file jira-keys.txt --parent 90151715279
+```
+
+The tool will now validate the parent task before attempting migration and show a clear error if the parent is in a different list.
+
+### "Team not authorized" or "Parent task not found"
+This error typically means you're using an incorrect task ID or the task doesn't exist.
+
+**Common causes:**
+
+1. **Using the wrong ID format**
+   ```bash
+   # ❌ WRONG - Number from URL (not the task ID)
+   --parent 90151715279
+   
+   # ❌ WRONG - Custom task ID (doesn't work with API)
+   --parent DEV-41
+   
+   # ✅ CORRECT - Actual task ID (double-click the displayed ID to see it)
+   --parent 86c5v9c20
+   ```
+
+2. **Task doesn't exist** - Verify the task exists in ClickUp
+
+3. **No permission** - Ensure you have access to the parent task
+
+**How to get the ACTUAL ClickUp task ID:**
+
+1. Open the parent task in ClickUp
+2. Find the task ID displayed (e.g., `DEV-41`)
+3. **Double-click the task ID** - this reveals the actual ID (e.g., `86c5v9c20`)
+4. Use this actual ID with `--parent`
+
+**OR use the API:**
+```bash
+curl "https://api.clickup.com/api/v2/list/YOUR_LIST_ID/task" \
+  -H "Authorization: YOUR_API_TOKEN"
+```
+
+Look for the `id` field (not `custom_id`) in the response.
+
+**Correct usage:**
+```bash
+yarn dev bulk --file jira-keys.txt --parent 86c5v9c20
+```
 
 ### Verification Steps
 

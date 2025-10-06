@@ -102,6 +102,7 @@ export interface MigrationConfig {
   clickupListId?: string;
   clickupExternalIdFieldId?: string;
   clickupStatusMapping?: { [key: string]: string };
+  clickupParentTaskId?: string;
   targetPlatform?: 'shortcut' | 'clickup';
   defaultTeamId?: string;
   defaultProjectId?: string;

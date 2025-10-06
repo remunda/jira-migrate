@@ -238,7 +238,8 @@ export class JiraToClickUpMigrator {
 
   async migrateIssue(
     jiraKey: string,
-    listId?: string
+    listId?: string,
+    parentTaskId?: string
   ): Promise<ClickUpMigrationResult> {
     try {
       const issue = await this.jiraClient.getIssue(jiraKey);
@@ -252,6 +253,20 @@ export class JiraToClickUpMigrator {
       }
 
       const targetListId = listId || this.config.clickupListId!;
+      
+      // Validate parent task if specified
+      const effectiveParentTaskId = parentTaskId || this.config.clickupParentTaskId;
+      if (effectiveParentTaskId) {
+        const validation = await this.clickupClient.validateParentTask(effectiveParentTaskId, targetListId);
+        if (!validation.valid) {
+          return {
+            success: false,
+            jiraKey,
+            error: `Parent task validation failed: ${validation.error}`,
+          };
+        }
+        console.log(`✓ Parent task validated: ${validation.task?.name} (${effectiveParentTaskId})`);
+      }
 
       // Check if task already exists (idempotent migration)
       let existingTask: ClickUpTask | undefined;
@@ -282,7 +297,7 @@ export class JiraToClickUpMigrator {
         console.log(`Updating existing task ID ${existingTask.id} for ${issue.key}`);
         
         const updatePayload: UpdateTaskPayload = {
-          name: `[${issue.key}] ${issue.fields.summary}`,
+          name: `${issue.fields.summary}`,
           description: description,
           status: this.mapJiraStatusToClickUp(issue.fields.status.name),
           tags: issue.fields.labels || [],
@@ -326,7 +341,7 @@ export class JiraToClickUpMigrator {
         console.log(`Creating new task for ${issue.key}`);
         
         const payload: CreateTaskPayload = {
-          name: `[${issue.key}] ${issue.fields.summary}`,
+          name: `${issue.fields.summary}`,
           description: description,
           status: this.mapJiraStatusToClickUp(issue.fields.status.name),
           tags: issue.fields.labels || [],
@@ -335,6 +350,13 @@ export class JiraToClickUpMigrator {
 
         if (issue.fields.priority) {
           payload.priority = this.mapJiraPriorityToClickUp(issue.fields.priority.name);
+        }
+
+        // Add parent task if specified
+        const effectiveParentTaskId = parentTaskId || this.config.clickupParentTaskId;
+        if (effectiveParentTaskId) {
+          payload.parent = effectiveParentTaskId;
+          console.log(`Assigning to parent task: ${effectiveParentTaskId}`);
         }
 
         // Add custom field for external ID if configured
@@ -384,12 +406,13 @@ export class JiraToClickUpMigrator {
 
   async migrateBulk(
     jiraKeys: string[],
-    listId?: string
+    listId?: string,
+    parentTaskId?: string
   ): Promise<ClickUpMigrationResult[]> {
     const results: ClickUpMigrationResult[] = [];
 
     for (const jiraKey of jiraKeys) {
-      const result = await this.migrateIssue(jiraKey, listId);
+      const result = await this.migrateIssue(jiraKey, listId, parentTaskId);
       results.push(result);
       
       // Add a small delay to avoid rate limiting (ClickUp has 100 requests/minute limit)

@@ -13,6 +13,7 @@ interface MigrateOptions {
   iteration?: string;
   currentIteration?: boolean;
   list?: string;
+  parent?: string;
 }
 
 interface BulkOptions {
@@ -22,6 +23,7 @@ interface BulkOptions {
   iteration?: string;
   currentIteration?: boolean;
   list?: string;
+  parent?: string;
 }
 
 const program = new Command();
@@ -47,6 +49,7 @@ program
   .option('-i, --iteration <id>', 'Assign to specific iteration by ID (Shortcut only)')
   .option('-c, --current-iteration', 'Assign to current iteration (Shortcut only)')
   .option('-l, --list <id>', 'Assign to specific list by ID (ClickUp only)')
+  .option('-p, --parent <id>', 'Assign to parent task by ID (ClickUp only)')
   .action(async (jiraKey: string, options: MigrateOptions) => {
     try {
       const config = loadConfig();
@@ -86,11 +89,14 @@ program
           if (options.list) {
             console.log(chalk.yellow(`[DRY RUN] Would assign to list: ${options.list}`));
           }
+          if (options.parent) {
+            console.log(chalk.yellow(`[DRY RUN] Would assign to parent task: ${options.parent}`));
+          }
           return;
         }
 
         const migrationSpinner = ora(`Migrating ${jiraKey}...`).start();
-        const result = await migrator.migrateIssue(jiraKey, options.list);
+        const result = await migrator.migrateIssue(jiraKey, options.list, options.parent);
         
         if (result.success) {
           migrationSpinner.succeed(`Successfully migrated ${jiraKey}`);
@@ -173,6 +179,7 @@ program
   .option('-i, --iteration <id>', 'Assign to specific iteration by ID (Shortcut only)')
   .option('-c, --current-iteration', 'Assign to current iteration (Shortcut only)')
   .option('-l, --list <id>', 'Assign to specific list by ID (ClickUp only)')
+  .option('-p, --parent <id>', 'Assign to parent task by ID (ClickUp only)')
   .action(async (options: BulkOptions) => {
     try {
       let jiraKeys: string[] = [];
@@ -222,6 +229,9 @@ program
         if (targetPlatform === 'clickup' && options.list) {
           console.log(chalk.yellow(`[DRY RUN] Would assign to list: ${options.list}`));
         }
+        if (targetPlatform === 'clickup' && options.parent) {
+          console.log(chalk.yellow(`[DRY RUN] Would assign to parent task: ${options.parent}`));
+        }
         return;
       }
 
@@ -241,7 +251,7 @@ program
 
         console.log(chalk.blue(`\nMigrating ${jiraKeys.length} issues...\n`));
 
-        const results = await migrator.migrateBulk(jiraKeys, options.list);
+        const results = await migrator.migrateBulk(jiraKeys, options.list, options.parent);
         
         const successful = results.filter(r => r.success);
         const failed = results.filter(r => !r.success);

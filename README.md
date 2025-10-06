@@ -43,6 +43,7 @@ CLICKUP_TEAM_ID=your-team-id
 CLICKUP_SPACE_ID=your-space-id
 CLICKUP_LIST_ID=your-list-id
 CLICKUP_EXTERNAL_ID_FIELD_ID=custom-field-id  # Optional, for idempotent migrations
+CLICKUP_PARENT_TASK_ID=86c5v9c20  # Optional, actual task ID (double-click task ID in ClickUp to see it)
 ```
 
 ### 3. Test Connection
@@ -113,6 +114,10 @@ yarn dev migrate PROJ-123 --iteration 58
 
 # Migrate to specific list (ClickUp only)
 yarn dev migrate PROJ-123 --list 87654321
+
+# Assign to parent task (ClickUp - use actual task ID, not URL number!)
+# Double-click the task ID in ClickUp to see the actual ID
+yarn dev migrate PROJ-123 --parent 86c5v9c20
 ```
 
 ### Bulk Migration
@@ -128,6 +133,9 @@ yarn dev bulk --file jira-keys.txt --dry-run
 
 # With iteration assignment (Shortcut)
 yarn dev bulk --keys PROJ-123 PROJ-124 --current-iteration
+
+# Assign all to parent task (ClickUp - use actual task ID!)
+yarn dev bulk --keys PROJ-123 PROJ-124 --parent 86c5v9c20
 ```
 
 ### Re-migration (Update)
@@ -169,6 +177,7 @@ yarn dev migrate PROJ-123
 - ✅ Custom field for External ID
 - ✅ Priority mapping (1-4)
 - ✅ Specific list selection (`--list <id>`)
+- ✅ Parent task assignment (`--parent <id>`)
 - ✅ Idempotent migration via custom field
 
 📖 **[Complete ClickUp Guide →](./CLICKUP.md)**

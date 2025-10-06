@@ -20,6 +20,7 @@ export function loadConfig(): MigrationConfig {
     clickupSpaceId: process.env.CLICKUP_SPACE_ID || '',
     clickupListId: process.env.CLICKUP_LIST_ID || '',
     clickupExternalIdFieldId: process.env.CLICKUP_EXTERNAL_ID_FIELD_ID || '',
+    clickupParentTaskId: process.env.CLICKUP_PARENT_TASK_ID || '',
     targetPlatform: (process.env.TARGET_PLATFORM as 'shortcut' | 'clickup') || 'shortcut',
     defaultTeamId: process.env.DEFAULT_SHORTCUT_TEAM_ID,
     defaultProjectId: process.env.DEFAULT_SHORTCUT_PROJECT_ID,
