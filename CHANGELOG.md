@@ -1,3 +1,22 @@
+# 1.0.0 (2025-10-07)
+
+
+### Bug Fixes
+
+* **clickup:** bad resolution of existing task ([e89d86f](https://github.com/remunda/jira-migrate/commit/e89d86f8753439a51d12dec4539934416bcf6414))
+* **clickup:** ignore types for parsing content ([d38412e](https://github.com/remunda/jira-migrate/commit/d38412ede72fd339d46fa362940ed8d28128d174))
+
+
+### Features
+
+* added CI ([7e78eaf](https://github.com/remunda/jira-migrate/commit/7e78eaf5de61899a151a6ace8a5845c0d3bb3b04))
+* added GH ci ([6f86c80](https://github.com/remunda/jira-migrate/commit/6f86c807811ad10da55ef04f95d8a42c70815758))
+* added types and fixed most of biome lint issues ([4ffaf60](https://github.com/remunda/jira-migrate/commit/4ffaf60c3c7a2300676058ca130d849cf4c97f2e))
+* **clickup:** parent task support ([0d6197c](https://github.com/remunda/jira-migrate/commit/0d6197c554dd9937d2711171bebce490539b2734))
+* **clickup:** support for comments ([2b6d7de](https://github.com/remunda/jira-migrate/commit/2b6d7de52965a448c8bf7480134e03244a22cc36))
+* semantic release ([e38b27e](https://github.com/remunda/jira-migrate/commit/e38b27e87263c0cadcb2a442428dad7bab17d526))
+* support for different issue types ([77a807f](https://github.com/remunda/jira-migrate/commit/77a807fb4fd6aa2be9dbb032ee0c3eb3fab06ca1))
+
 # Changelog
 
 ## [2.0.0] - 2025-10-03
