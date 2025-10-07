@@ -1,26 +1,45 @@
 {
-	"name": "shortcut-jira",
+	"name": "jira-migrate",
 	"version": "1.0.0",
-	"description": "CLI tool for migrating JIRA items (Epics, Features, User Stories) to Shortcut.com",
+	"description": "CLI tool for migrating JIRA items (Epics, Features, User Stories) to Shortcut.com or ClickUp",
 	"main": "dist/index.js",
-	"bin": {
-		"jira-to-shortcut": "dist/cli.js"
-	},
+	"bin": "dist/cli.js",
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/cli.js",
 		"dev": "ts-node src/cli.ts",
 		"test": "jest",
-		"precommit": "biome format --fix && biome lint --fix && biome check --fix"
+		"precommit": "biome format --fix && biome lint --fix && biome check --fix",
+		"prepublishOnly": "yarn build"
 	},
 	"keywords": [
 		"jira",
 		"shortcut",
+		"clickup",
 		"migration",
-		"cli"
+		"cli",
+		"atlassian",
+		"import",
+		"export"
 	],
-	"author": "",
+	"author": "remunda",
 	"license": "CC-BY-SA-4.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/remunda/jira-migrate.git"
+	},
+	"bugs": {
+		"url": "https://github.com/remunda/jira-migrate/issues"
+	},
+	"homepage": "https://github.com/remunda/jira-migrate#readme",
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=18.0.0"
+	},
 	"dependencies": {
 		"axios": "^1.6.0",
 		"chalk": "^4.1.2",

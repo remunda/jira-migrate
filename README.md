@@ -6,9 +6,17 @@ CLI tool for migrating tasks from JIRA to Shortcut.com or ClickUp. Supports migr
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### Option 1: Using npx (Recommended)
 
 ```bash
+npx jira-migrate setup
+```
+
+### Option 2: Development Setup
+
+```bash
+git clone https://github.com/remunda/jira-migrate.git
+cd jira-migrate
 yarn install
 yarn build
 ```
@@ -16,6 +24,10 @@ yarn build
 ### 2. Configuration
 
 ```bash
+# Using npx
+npx jira-migrate setup
+
+# Or in development
 yarn dev setup
 ```
 
@@ -49,22 +61,26 @@ CLICKUP_PARENT_TASK_ID=86c5v9c20  # Optional, actual task ID (double-click task 
 ### 3. Test Connection
 
 ```bash
+# Using npx
+npx jira-migrate test
+
+# Or in development
 yarn dev test
 ```
 
 ### 4. Basic Migration
 
 ```bash
-# Inspect JIRA issue before migration
+# Using npx
+npx jira-migrate inspect PROJ-123
+npx jira-migrate migrate PROJ-123
+npx jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
+npx jira-migrate bulk --file jira-keys.txt
+
+# Or in development
 yarn dev inspect PROJ-123
-
-# Migrate single issue
 yarn dev migrate PROJ-123
-
-# Migrate multiple issues at once
 yarn dev bulk --keys PROJ-123 PROJ-124 PROJ-125
-
-# Migrate from file
 yarn dev bulk --file jira-keys.txt
 ```
 
@@ -95,47 +111,50 @@ yarn dev bulk --file jira-keys.txt
 ### Inspect Issue
 ```bash
 # Find out type and details before migration
+npx jira-migrate inspect PROJ-123
+
+# Or in development
 yarn dev inspect PROJ-123
 ```
 
 ### Single Issue Migration
 ```bash
 # Basic migration
-yarn dev migrate PROJ-123
+npx jira-migrate migrate PROJ-123
 
 # Dry run (shows what will happen without executing)
-yarn dev migrate PROJ-123 --dry-run
+npx jira-migrate migrate PROJ-123 --dry-run
 
 # With assignment to current iteration (Shortcut only)
-yarn dev migrate PROJ-123 --current-iteration
+npx jira-migrate migrate PROJ-123 --current-iteration
 
 # With assignment to specific iteration (Shortcut only)
-yarn dev migrate PROJ-123 --iteration 58
+npx jira-migrate migrate PROJ-123 --iteration 58
 
 # Migrate to specific list (ClickUp only)
-yarn dev migrate PROJ-123 --list 87654321
+npx jira-migrate migrate PROJ-123 --list 87654321
 
 # Assign to parent task (ClickUp - use actual task ID, not URL number!)
 # Double-click the task ID in ClickUp to see the actual ID
-yarn dev migrate PROJ-123 --parent 86c5v9c20
+npx jira-migrate migrate PROJ-123 --parent 86c5v9c20
 ```
 
 ### Bulk Migration
 ```bash
 # Migrate multiple issues at once
-yarn dev bulk --keys PROJ-123 PROJ-124 PROJ-125
+npx jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
 
 # Migrate from file (one key per line)
-yarn dev bulk --file jira-keys.txt
+npx jira-migrate bulk --file jira-keys.txt
 
 # Dry run for bulk migration
-yarn dev bulk --file jira-keys.txt --dry-run
+npx jira-migrate bulk --file jira-keys.txt --dry-run
 
 # With iteration assignment (Shortcut)
-yarn dev bulk --keys PROJ-123 PROJ-124 --current-iteration
+npx jira-migrate bulk --keys PROJ-123 PROJ-124 --current-iteration
 
 # Assign all to parent task (ClickUp - use actual task ID!)
-yarn dev bulk --keys PROJ-123 PROJ-124 --parent 86c5v9c20
+npx jira-migrate bulk --keys PROJ-123 PROJ-124 --parent 86c5v9c20
 ```
 
 ### Re-migration (Update)

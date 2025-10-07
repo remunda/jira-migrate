@@ -1,0 +1,54 @@
+# Source files
+src/
+tsconfig.json
+
+# Development files
+.env
+.env.*
+*.log
+node_modules/
+
+# Documentation (except README)
+AGENTS.md
+CLICKUP_REFACTORING.md
+CLICKUP.md
+COMMENT_DEDUPLICATION.md
+COMMENT_SYNC_FEATURE.md
+RATE_LIMIT_HANDLING.md
+SHORTCUT.md
+example-jira-keys.txt
+jira-manual.txt
+jira-manual1.txt
+
+# Git
+.git/
+.github/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Biome
+biome.json
+
+# Yarn
+.yarn/
+.pnp.*
+yarn.lock
+
+# Build artifacts (will be included via package.json files field)
+# dist/ - explicitly included in package.json
+
+# Tests
+__tests__/
+*.test.ts
+*.spec.ts
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
