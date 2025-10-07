@@ -45,16 +45,20 @@ export class JiraClient {
 			});
 
 			return response.data;
-		} catch (error: any) {
-			if (error.response?.status === 404) {
+		} catch (error: unknown) {
+			if (
+				error instanceof Error &&
+				(error as { response?: { status?: number } }).response?.status === 404
+			) {
 				throw new Error(`JIRA issue ${issueKey} not found`);
 			}
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
 			throw new Error(
-				`Failed to fetch JIRA issue ${issueKey}: ${error.message}`,
+				`Failed to fetch JIRA issue ${issueKey}: ${errorMessage}`,
 			);
 		}
 	}
-
 	async getIssuesByJQL(
 		jql: string,
 		maxResults: number = 50,
@@ -82,16 +86,17 @@ export class JiraClient {
 			});
 
 			return response.data.issues;
-		} catch (error: any) {
-			throw new Error(`Failed to search JIRA issues: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to search JIRA issues: ${errorMessage}`);
 		}
 	}
-
 	async validateConnection(): Promise<boolean> {
 		try {
 			await this.client.get("/myself");
 			return true;
-		} catch (error) {
+		} catch (_error) {
 			return false;
 		}
 	}
@@ -106,9 +111,11 @@ export class JiraClient {
 				responseType: "arraybuffer",
 			});
 			return Buffer.from(response.data);
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
 			throw new Error(
-				`Failed to download attachment from ${url}: ${error.message}`,
+				`Failed to download attachment from ${url}: ${errorMessage}`,
 			);
 		}
 	}

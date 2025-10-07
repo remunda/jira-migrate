@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
-import { JiraToShortcutMigrator } from "./migrator";
-import { JiraToClickUpMigrator } from "./clickup-migrator";
-import { loadConfig, validateConfig, createEnvFile } from "./config";
+import * as fs from "node:fs";
 import chalk from "chalk";
+import { Command } from "commander";
 import ora from "ora";
-import * as fs from "fs";
+import { JiraToClickUpMigrator } from "./clickup-migrator";
+import { createEnvFile, loadConfig, validateConfig } from "./config";
+import { JiraToShortcutMigrator } from "./migrator";
 
 interface MigrateOptions {
 	dryRun?: boolean;

@@ -1,67 +1,90 @@
 import axios, { type AxiosInstance } from "axios";
-import type { ShortcutStory, ShortcutEpic, MigrationConfig } from "./types";
+import type {
+	MigrationConfig,
+	ShortcutEpic,
+	ShortcutEpicResponse,
+	ShortcutIteration,
+	ShortcutLabel,
+	ShortcutMember,
+	ShortcutStory,
+	ShortcutStoryResponse,
+	ShortcutWorkflow,
+	ShortcutWorkflowState,
+} from "./types";
 
 export class ShortcutClient {
 	private client: AxiosInstance;
-	private config: MigrationConfig;
 
-	constructor(config: MigrationConfig) {
-		this.config = config;
+	constructor(private config: MigrationConfig) {
 		this.client = axios.create({
 			baseURL: "https://api.app.shortcut.com/api/v3",
 			headers: {
-				"Shortcut-Token": config.shortcutApiToken,
+				"Shortcut-Token": this.config.shortcutApiToken,
 				"Content-Type": "application/json",
 			},
 		});
 	}
 
-	async createStory(story: ShortcutStory): Promise<any> {
+	async createStory(story: ShortcutStory): Promise<ShortcutStoryResponse> {
 		try {
 			const response = await this.client.post("/stories", story);
 			return response.data;
-		} catch (error: any) {
-			throw new Error(
-				`Failed to create Shortcut story: ${error.response?.data?.message || error.message}`,
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				(error instanceof Error &&
+					(error as { response?: { data?: { message?: string } } }).response
+						?.data?.message) ||
+				(error instanceof Error ? error.message : String(error));
+			throw new Error(`Failed to create Shortcut story: ${errorMessage}`);
 		}
 	}
 
-	async createEpic(epic: ShortcutEpic): Promise<any> {
+	async createEpic(epic: ShortcutEpic): Promise<ShortcutEpicResponse> {
 		try {
 			const response = await this.client.post("/epics", epic);
 			return response.data;
-		} catch (error: any) {
-			throw new Error(
-				`Failed to create Shortcut epic: ${error.response?.data?.message || error.message}`,
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				(error instanceof Error &&
+					(error as { response?: { data?: { message?: string } } }).response
+						?.data?.message) ||
+				(error instanceof Error ? error.message : String(error));
+			throw new Error(`Failed to create Shortcut epic: ${errorMessage}`);
 		}
 	}
 
-	async getWorkflowStates(): Promise<any[]> {
+	async getWorkflowStates(): Promise<ShortcutWorkflowState[]> {
 		try {
 			const response = await this.client.get("/workflows");
-			return response.data.flatMap((workflow: any) => workflow.states);
-		} catch (error: any) {
-			throw new Error(`Failed to get workflow states: ${error.message}`);
+			return response.data.flatMap(
+				(workflow: ShortcutWorkflow) => workflow.states,
+			);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to get workflow states: ${errorMessage}`);
 		}
 	}
 
-	async getMembers(): Promise<any[]> {
+	async getMembers(): Promise<ShortcutMember[]> {
 		try {
 			const response = await this.client.get("/members");
 			return response.data;
-		} catch (error: any) {
-			throw new Error(`Failed to get members: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to get members: ${errorMessage}`);
 		}
 	}
 
-	async getLabels(): Promise<any[]> {
+	async getLabels(): Promise<ShortcutLabel[]> {
 		try {
 			const response = await this.client.get("/labels");
 			return response.data;
-		} catch (error: any) {
-			throw new Error(`Failed to get labels: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(`Failed to get labels: ${errorMessage}`);
 		}
 	}
 
@@ -69,24 +92,26 @@ export class ShortcutClient {
 		try {
 			await this.client.get("/member");
 			return true;
-		} catch (error) {
+		} catch (_error) {
 			return false;
 		}
 	}
 
-	async findMemberByEmail(email: string): Promise<any | null> {
+	async findMemberByEmail(email: string): Promise<ShortcutMember | null> {
 		try {
 			const members = await this.getMembers();
 			return (
 				members.find((member) => member.profile?.email_address === email) ||
 				null
 			);
-		} catch (error) {
+		} catch (_error) {
 			return null;
 		}
 	}
 
-	async findWorkflowStateByName(stateName: string): Promise<any | null> {
+	async findWorkflowStateByName(
+		stateName: string,
+	): Promise<ShortcutWorkflowState | null> {
 		try {
 			const states = await this.getWorkflowStates();
 			return (
@@ -94,12 +119,14 @@ export class ShortcutClient {
 					(state) => state.name.toLowerCase() === stateName.toLowerCase(),
 				) || null
 			);
-		} catch (error) {
+		} catch (_error) {
 			return null;
 		}
 	}
 
-	async findStoryByExternalId(externalId: string): Promise<any | null> {
+	async findStoryByExternalId(
+		externalId: string,
+	): Promise<ShortcutStoryResponse | null> {
 		try {
 			// Use Shortcut's search API with external-id operator (note: hyphen, not underscore)
 			console.log(`Searching for story with external-id: ${externalId}`);
@@ -119,13 +146,17 @@ export class ShortcutClient {
 
 			console.log(`No story found with external-id: ${externalId}`);
 			return null;
-		} catch (error: any) {
-			console.error(`Error searching for story: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.error(`Error searching for story: ${errorMessage}`);
 			return null;
 		}
 	}
 
-	async findEpicByExternalId(externalId: string): Promise<any | null> {
+	async findEpicByExternalId(
+		externalId: string,
+	): Promise<ShortcutEpicResponse | null> {
 		try {
 			// Use Shortcut's search API with external-id operator for epics
 			console.log(`Searching for epic with external-id: ${externalId}`);
@@ -145,8 +176,10 @@ export class ShortcutClient {
 
 			console.log(`No epic found with external-id: ${externalId}`);
 			return null;
-		} catch (error: any) {
-			console.error(`Error searching for epic: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.error(`Error searching for epic: ${errorMessage}`);
 			return null;
 		}
 	}
@@ -154,40 +187,52 @@ export class ShortcutClient {
 	async updateStory(
 		storyId: number,
 		story: Partial<ShortcutStory>,
-	): Promise<any> {
+	): Promise<ShortcutStoryResponse> {
 		try {
 			const response = await this.client.put(`/stories/${storyId}`, story);
 			return response.data;
-		} catch (error: any) {
-			throw new Error(
-				`Failed to update Shortcut story: ${error.response?.data?.message || error.message}`,
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				(error instanceof Error &&
+					(error as { response?: { data?: { message?: string } } }).response
+						?.data?.message) ||
+				(error instanceof Error ? error.message : String(error));
+			throw new Error(`Failed to update Shortcut story: ${errorMessage}`);
 		}
 	}
 
-	async updateEpic(epicId: number, epic: Partial<ShortcutEpic>): Promise<any> {
+	async updateEpic(
+		epicId: number,
+		epic: Partial<ShortcutEpic>,
+	): Promise<ShortcutEpicResponse> {
 		try {
 			const response = await this.client.put(`/epics/${epicId}`, epic);
 			return response.data;
-		} catch (error: any) {
-			throw new Error(
-				`Failed to update Shortcut epic: ${error.response?.data?.message || error.message}`,
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				(error instanceof Error &&
+					(error as { response?: { data?: { message?: string } } }).response
+						?.data?.message) ||
+				(error instanceof Error ? error.message : String(error));
+			throw new Error(`Failed to update Shortcut epic: ${errorMessage}`);
 		}
 	}
 
-	async getIterations(): Promise<any[]> {
+	async getIterations(): Promise<ShortcutIteration[]> {
 		try {
 			const response = await this.client.get("/iterations");
 			return response.data;
-		} catch (error: any) {
-			throw new Error(
-				`Failed to get iterations: ${error.response?.data?.message || error.message}`,
-			);
+		} catch (error: unknown) {
+			const errorMessage =
+				(error instanceof Error &&
+					(error as { response?: { data?: { message?: string } } }).response
+						?.data?.message) ||
+				(error instanceof Error ? error.message : String(error));
+			throw new Error(`Failed to get iterations: ${errorMessage}`);
 		}
 	}
 
-	async getCurrentIteration(): Promise<any | null> {
+	async getCurrentIteration(): Promise<ShortcutIteration | null> {
 		try {
 			const iterations = await this.getIterations();
 			const now = new Date();
@@ -200,8 +245,10 @@ export class ShortcutClient {
 			});
 
 			return current || null;
-		} catch (error: any) {
-			console.error(`Error getting current iteration: ${error.message}`);
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.error(`Error getting current iteration: ${errorMessage}`);
 			return null;
 		}
 	}

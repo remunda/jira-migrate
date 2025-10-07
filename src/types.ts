@@ -3,7 +3,7 @@ export interface JiraIssue {
 	key: string;
 	fields: {
 		summary: string;
-		description?: any; // Can be string or ADF object
+		description?: string | Record<string, unknown>; // Can be string or ADF object
 		attachment?: Array<{
 			id: string;
 			filename: string;
@@ -122,4 +122,67 @@ export type IssueTypeMapping = {
 
 export type StatusMapping = {
 	[jiraStatus: string]: string; // Shortcut workflow state or epic state
+};
+
+export interface ShortcutMember {
+	id: string;
+	profile?: {
+		email_address?: string;
+	};
+}
+
+export interface ShortcutWorkflowState {
+	id: number;
+	name: string;
+	type: string;
+}
+
+export interface ShortcutWorkflow {
+	id: number;
+	name: string;
+	states: ShortcutWorkflowState[];
+}
+
+export interface ShortcutLabel {
+	id: number;
+	name: string;
+}
+
+export interface ShortcutStoryResponse {
+	id: number;
+	name: string;
+	app_url: string;
+	[key: string]: unknown;
+}
+
+export interface ShortcutEpicResponse {
+	id: number;
+	name: string;
+	app_url: string;
+	[key: string]: unknown;
+}
+
+export interface ShortcutIteration {
+	id: number;
+	name: string;
+	start_date: string;
+	end_date: string;
+	[key: string]: unknown;
+}
+
+// ADF (Atlas Document Format) types - simplified for migration purposes
+export type ADFNode = {
+	type: string;
+	content?: ADFNode[];
+	attrs?: Record<string, unknown>;
+	text?: string;
+	marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+	[key: string]: unknown;
+};
+
+export type ADFDocument = {
+	version: number;
+	type: "doc";
+	content?: ADFNode[];
+	[key: string]: unknown;
 };

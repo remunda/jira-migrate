@@ -1,19 +1,18 @@
 import { JiraClient } from "./jira-client";
 import { ShortcutClient } from "./shortcut-client";
 import type {
+	IssueTypeMapping,
 	JiraIssue,
-	ShortcutStory,
-	ShortcutEpic,
 	MigrationConfig,
 	MigrationResult,
-	IssueTypeMapping,
+	ShortcutEpic,
+	ShortcutStory,
 	StatusMapping,
 } from "./types";
 
 export class JiraToShortcutMigrator {
 	private jiraClient: JiraClient;
 	private shortcutClient: ShortcutClient;
-	private config: MigrationConfig;
 
 	// Default mappings
 	private issueTypeMapping: IssueTypeMapping = {
@@ -34,10 +33,9 @@ export class JiraToShortcutMigrator {
 		Resolved: "Done",
 	};
 
-	constructor(config: MigrationConfig) {
-		this.config = config;
-		this.jiraClient = new JiraClient(config);
-		this.shortcutClient = new ShortcutClient(config);
+	constructor(private config: MigrationConfig) {
+		this.jiraClient = new JiraClient(this.config);
+		this.shortcutClient = new ShortcutClient(this.config);
 	}
 
 	async validateConnections(): Promise<{ jira: boolean; shortcut: boolean }> {
@@ -218,7 +216,7 @@ export class JiraToShortcutMigrator {
 		const existing = await this.shortcutClient.findStoryByExternalId(
 			jiraIssue.key,
 		);
-		let result;
+		let result: ShortcutStoryResponse | null;
 
 		if (existing) {
 			console.log(
@@ -261,7 +259,7 @@ export class JiraToShortcutMigrator {
 		for (const node of content) {
 			if (node.type === "paragraph") {
 				if (node.content) {
-					text += this.processADFContent(node.content) + "\n\n";
+					text += `${this.processADFContent(node.content)}\n\n`;
 				} else {
 					text += "\n";
 				}
@@ -289,11 +287,10 @@ export class JiraToShortcutMigrator {
 				const prefix = "#".repeat(level);
 				text += `${prefix} ${this.processADFContent(node.content || [])}\n\n`;
 			} else if (node.type === "bulletList" || node.type === "orderedList") {
-				text +=
-					this.processListContent(
-						node.content || [],
-						node.type === "orderedList",
-					) + "\n";
+				text += `${this.processListContent(
+					node.content || [],
+					node.type === "orderedList",
+				)}\n`;
 			} else if (node.type === "listItem") {
 				text += this.processADFContent(node.content || []);
 			} else if (node.type === "codeBlock") {
@@ -301,11 +298,10 @@ export class JiraToShortcutMigrator {
 				text += `\`\`\`\n${code}\`\`\`\n\n`;
 			} else if (node.type === "blockquote") {
 				const content = this.processADFContent(node.content || []);
-				text +=
-					content
-						.split("\n")
-						.map((line) => `> ${line}`)
-						.join("\n") + "\n\n";
+				text += `${content
+					.split("\n")
+					.map((line) => `> ${line}`)
+					.join("\n")}\n\n`;
 			} else if (node.type === "hardBreak") {
 				text += "\n";
 			}
@@ -330,7 +326,7 @@ export class JiraToShortcutMigrator {
 		if (jiraIssue.fields.description) {
 			const descText = this.convertADFToText(jiraIssue.fields.description);
 			if (descText.trim()) {
-				description += descText + "\n\n";
+				description += `${descText}\n\n`;
 			}
 		}
 

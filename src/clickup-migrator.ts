@@ -1,11 +1,11 @@
-import { JiraClient } from "./jira-client";
-import type { JiraIssue, MigrationConfig } from "./types";
 import {
 	ClickUpClient,
+	type ClickUpTask,
 	type CreateTaskPayload,
 	type UpdateTaskPayload,
-	type ClickUpTask,
 } from "./clickup-client";
+import { JiraClient } from "./jira-client";
+import type { JiraIssue, MigrationConfig } from "./types";
 
 export interface ClickUpMigrationResult {
 	success: boolean;
@@ -63,7 +63,7 @@ export class JiraToClickUpMigrator {
 
 		// Use custom mapping if provided (highest priority)
 		const customMapping = this.config.clickupStatusMapping;
-		if (customMapping && customMapping[jiraStatus]) {
+		if (customMapping?.[jiraStatus]) {
 			return customMapping[jiraStatus];
 		}
 
@@ -150,7 +150,7 @@ export class JiraToClickUpMigrator {
 
 		for (const node of nodes) {
 			if (node.type === "paragraph") {
-				text += this.parseAdfContent(node.content || []) + "\n\n";
+				text += `${this.parseAdfContent(node.content || [])}\n\n`;
 			} else if (node.type === "heading") {
 				const level = node.attrs?.level || 1;
 				const prefix = "#".repeat(level);
@@ -226,7 +226,7 @@ export class JiraToClickUpMigrator {
 			issue.fields.description,
 		);
 		if (parsedDescription) {
-			description += parsedDescription + "\n\n---\n\n";
+			description += `${parsedDescription}\n\n---\n\n`;
 		}
 
 		// Add metadata
@@ -374,11 +374,11 @@ export class JiraToClickUpMigrator {
 				};
 
 				if (
-					issueType == "bug" ||
-					issueType == "defect" ||
-					issueType == "error" ||
-					issueType == "fault" ||
-					issueType == "issue"
+					issueType === "bug" ||
+					issueType === "defect" ||
+					issueType === "error" ||
+					issueType === "fault" ||
+					issueType === "issue"
 				) {
 					updatePayload.custom_item_id = 1001; // Assuming 1001 is the ID for "Bug" task type
 					console.log("Setting task type to Bug");
