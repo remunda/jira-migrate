@@ -47,15 +47,22 @@ export class JiraToShortcutMigrator {
 		return { jira: jiraValid, shortcut: shortcutValid };
 	}
 
-	async getCurrentIteration(): Promise<any | null> {
+	async getCurrentIteration(): Promise<{
+		id: number;
+		name: string;
+		start_date: string;
+		end_date: string;
+	} | null> {
 		return await this.shortcutClient.getCurrentIteration();
 	}
 
 	async inspectIssue(jiraKey: string): Promise<JiraIssue | null> {
 		try {
 			return await this.jiraClient.getIssue(jiraKey);
-		} catch (error: any) {
-			console.error(`Failed to fetch JIRA issue: ${error.message}`);
+		} catch (error: unknown) {
+			console.error(
+				`Failed to fetch JIRA issue: ${error instanceof Error ? error.message : String(error)}`,
+			);
 			return null;
 		}
 	}
@@ -82,11 +89,11 @@ export class JiraToShortcutMigrator {
 			} else {
 				return await this.migrateAsStory(jiraIssue, iterationId);
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
 			return {
 				success: false,
 				jiraKey,
-				error: error.message,
+				error: error instanceof Error ? error.message : String(error),
 			};
 		}
 	}
@@ -239,6 +246,7 @@ export class JiraToShortcutMigrator {
 		};
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: any content
 	private convertADFToText(adf: any): string {
 		if (!adf) return "";
 
@@ -253,6 +261,7 @@ export class JiraToShortcutMigrator {
 		return "";
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: any content
 	private processADFContent(content: any[]): string {
 		let text = "";
 
@@ -310,7 +319,11 @@ export class JiraToShortcutMigrator {
 		return text;
 	}
 
-	private processListContent(items: any[], ordered: boolean): string {
+	private processListContent(
+		// biome-ignore lint/suspicious/noExplicitAny: any content
+		items: { content: any[] }[],
+		ordered: boolean,
+	): string {
 		let text = "";
 		items.forEach((item, index) => {
 			const prefix = ordered ? `${index + 1}. ` : "- ";

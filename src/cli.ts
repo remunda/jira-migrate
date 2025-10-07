@@ -78,6 +78,8 @@ program
 
 			if (configErrors.length > 0) {
 				console.log(chalk.red("Configuration errors:"));
+
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: just logging
 				configErrors.forEach((error) => console.log(chalk.red(`  - ${error}`)));
 				console.log(
 					chalk.yellow(
@@ -213,8 +215,10 @@ program
 					console.log(chalk.red(`Error: ${result.error}`));
 				}
 			}
-		} catch (error: any) {
-			console.log(chalk.red(`Error: ${error.message}`));
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.log(chalk.red(`Error: ${errorMessage}`));
 			process.exit(1);
 		}
 	});
@@ -281,6 +285,8 @@ program
 
 			if (configErrors.length > 0) {
 				console.log(chalk.red("Configuration errors:"));
+
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: just logging
 				configErrors.forEach((error) => console.log(chalk.red(`  - ${error}`)));
 				console.log(
 					chalk.yellow(
@@ -299,6 +305,7 @@ program
 				console.log(
 					chalk.yellow("[DRY RUN] Would migrate the following JIRA issues:"),
 				);
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: just logging
 				jiraKeys.forEach((key) => console.log(chalk.yellow(`  - ${key}`)));
 				if (targetPlatform === "shortcut" && options.iteration) {
 					console.log(
@@ -432,8 +439,10 @@ program
 					});
 				}
 			}
-		} catch (error: any) {
-			console.log(chalk.red(`Error: ${error.message}`));
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.log(chalk.red(`Error: ${errorMessage}`));
 			process.exit(1);
 		}
 	});
@@ -449,6 +458,8 @@ program
 
 			if (configErrors.length > 0) {
 				console.log(chalk.red("Configuration errors:"));
+
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: just logging
 				configErrors.forEach((error) => console.log(chalk.red(`  - ${error}`)));
 				process.exit(1);
 			}
@@ -494,8 +505,10 @@ program
 			} else {
 				spinner.fail("Failed to fetch JIRA issue");
 			}
-		} catch (error: any) {
-			console.log(chalk.red(`Error: ${error.message}`));
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.log(chalk.red(`Error: ${errorMessage}`));
 			process.exit(1);
 		}
 	});
@@ -510,6 +523,7 @@ program
 
 			if (configErrors.length > 0) {
 				console.log(chalk.red("Configuration errors:"));
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: just logging
 				configErrors.forEach((error) => console.log(chalk.red(`  - ${error}`)));
 				console.log(
 					chalk.yellow(
@@ -548,8 +562,10 @@ program
 				);
 				process.exit(1);
 			}
-		} catch (error: any) {
-			console.log(chalk.red(`Error: ${error.message}`));
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			console.log(chalk.red(`Error: ${errorMessage}`));
 			process.exit(1);
 		}
 	});

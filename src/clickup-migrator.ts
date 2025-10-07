@@ -130,6 +130,7 @@ export class JiraToClickUpMigrator {
 		return undefined;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: type is dynamic
 	private parseAdfDescription(description: any): string {
 		if (!description) return "";
 
@@ -145,6 +146,7 @@ export class JiraToClickUpMigrator {
 		return JSON.stringify(description);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: no type definition available
 	private parseAdfNodes(nodes: any[]): string {
 		let text = "";
 
@@ -171,6 +173,7 @@ export class JiraToClickUpMigrator {
 		return text.trim();
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: no type definition available
 	private parseAdfContent(content: any[]): string {
 		let text = "";
 
@@ -203,6 +206,7 @@ export class JiraToClickUpMigrator {
 		return text;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: no type definition available
 	private parseAdfList(items: any[], ordered: boolean = false): string {
 		let text = "";
 
@@ -260,9 +264,7 @@ export class JiraToClickUpMigrator {
 
 		// Add components
 		if (issue.fields.components && issue.fields.components.length > 0) {
-			const components = issue.fields.components
-				.map((c: any) => c.name)
-				.join(", ");
+			const components = issue.fields.components.map((c) => c.name).join(", ");
 			description += `- **Components:** ${components}\n`;
 		}
 
@@ -299,7 +301,7 @@ export class JiraToClickUpMigrator {
 				};
 			}
 
-			const targetListId = listId || this.config.clickupListId!;
+			const targetListId = listId || this.config.clickupListId;
 
 			// Validate parent task if specified (only use explicitly provided parentTaskId)
 			if (parentTaskId) {
