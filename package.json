@@ -10,7 +10,8 @@
     "build": "tsc",
     "start": "node dist/cli.js",
     "dev": "ts-node src/cli.ts",
-    "test": "jest"
+    "test": "jest",
+    "precommit": "biome format --fix && biome lint --fix"
   },
   "keywords": [
     "jira",
@@ -30,6 +31,7 @@
     "ora": "^5.4.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@types/form-data": "^2.5.2",
     "@types/inquirer": "^9.0.7",
     "@types/jest": "^29.5.5",

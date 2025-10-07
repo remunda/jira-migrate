@@ -113,67 +113,75 @@ export class ClickUpClient {
     initialDelayMs: number = 2000
   ): Promise<T> {
     let lastError: any;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await fn();
       } catch (error: any) {
         lastError = error;
-        
+
         // Check if it's a rate limit error
-        const isRateLimit = 
+        const isRateLimit =
           error.response?.status === 429 ||
           error.response?.data?.err === "Rate limit reached" ||
           error.response?.data?.ECODE === "APP_002";
-        
+
         if (isRateLimit && attempt < maxRetries) {
           const headers = error.response?.headers || {};
-          const rateLimitRemaining = headers['x-ratelimit-remaining'];
-          const rateLimitReset = headers['x-ratelimit-reset'];
-          
+          const rateLimitRemaining = headers["x-ratelimit-remaining"];
+          const rateLimitReset = headers["x-ratelimit-reset"];
+
           let delayMs = initialDelayMs * Math.pow(2, attempt);
-          
+
           // If we have rate limit headers, use them for precise timing
           if (rateLimitReset) {
             const resetTime = parseInt(rateLimitReset) * 1000; // Convert to milliseconds
             const now = Date.now();
             const waitTimeMs = resetTime - now;
-            
+
             if (waitTimeMs > 0) {
               const waitTimeMinutes = waitTimeMs / 60000;
-              
+
               // If wait time is more than 1 minute, exit with error message
               if (waitTimeMinutes > 1) {
                 const resetDate = new Date(resetTime);
                 const formattedTime = resetDate.toLocaleTimeString();
                 const formattedDate = resetDate.toLocaleDateString();
-                
+
                 throw new Error(
-                  `Rate limit exceeded. Please wait until ${formattedTime} on ${formattedDate} (${Math.ceil(waitTimeMinutes)} minutes) before retrying.`
+                  `Rate limit exceeded. Please wait until ${formattedTime} on ${formattedDate} (${Math.ceil(
+                    waitTimeMinutes
+                  )} minutes) before retrying.`
                 );
               }
-              
+
               // Use the exact wait time from the header
               delayMs = waitTimeMs + 1000; // Add 1 second buffer
               console.warn(
-                `⚠️  Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s until reset at ${new Date(resetTime).toLocaleTimeString()}...`
+                `⚠️  Rate limit reached. Waiting ${Math.ceil(
+                  waitTimeMs / 1000
+                )}s until reset at ${new Date(
+                  resetTime
+                ).toLocaleTimeString()}...`
               );
             }
           } else {
             console.warn(
-              `⚠️  Rate limit reached. Waiting ${delayMs / 1000}s before retry (attempt ${attempt + 1}/${maxRetries})...`
+              `⚠️  Rate limit reached. Waiting ${
+                delayMs / 1000
+              }s before retry (attempt ${attempt + 1}/${maxRetries})...`
             );
           }
-          
+
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           continue;
         }
-        
+
         // If it's not a rate limit error or we've exhausted retries, throw
         throw error;
       }
     }
-    
+
     throw lastError;
   }
 
@@ -282,83 +290,16 @@ export class ClickUpClient {
       let tasks: ClickUpTask[] = response.data.tasks || [];
       console.log(`API returned ${tasks.length} task(s) with filter`);
 
-      // If no results with filter, try fetching all and filtering manually
-      if (tasks.length === 0) {
-        console.log(
-          "Filter returned 0 tasks, fetching all tasks and filtering manually..."
-        );
-        response = await this.client.get(`/list/${this.listId}/task`, {
-          params: {
-            include_closed: true,
-            subtasks: true, // Include subtasks in the search
-          },
-        });
-
-        const allTasks: ClickUpTask[] = response.data.tasks || [];
-        console.log(`Found ${allTasks.length} total tasks in list`);
-
-        // Fetch full details for each task to get custom field values
-        const tasksWithDetails = await Promise.all(
-          allTasks.map(async (task) => {
-            try {
-              return await this.getTask(task.id);
-            } catch (error) {
-              console.error(`Error fetching task ${task.id}:`, error);
-              return task; // Return original if fetch fails
-            }
-          })
-        );
-
-        tasks = tasksWithDetails.filter((task) => {
-          if (!task.custom_fields) {
-            console.log(`Task ${task.id}: no custom_fields`);
-            return false;
-          }
-
-          const externalIdField = task.custom_fields.find(
-            (cf) => cf.id === this.customFieldIdForExternalId
-          );
-
-          if (externalIdField) {
-            console.log(
-              `Task ${
-                task.id
-              }: external-id field found, full field: ${JSON.stringify(
-                externalIdField
-              )}`
-            );
-            // Check all possible locations for the value
-            const field = externalIdField as any;
-            const fieldValue =
-              field.value ??
-              field.text_value ??
-              field.string_value ??
-              field.default_value;
-            console.log(
-              `Extracted value: ${fieldValue}, checking against: ${externalId}`
-            );
-            return fieldValue === externalId;
-          } else {
-            console.log(
-              `Task ${
-                task.id
-              }: external-id field NOT found. Available fields: ${task.custom_fields
-                .map((cf) => `${cf.id}:${cf.name}`)
-                .join(", ")}`
-            );
-            return false;
-          }
-        });
-
-        console.log(`Manual filtering found ${tasks.length} matching task(s)`);
-      }
-
-      return tasks;
-    } catch (error: any) {
-      console.error(
-        "Error searching tasks by custom field:",
-        error.response?.data || error.message
+      // Clickup API returns partial matches, so filter exact matches in code
+      const exactMatches = tasks.filter((task) =>
+        task.custom_fields?.some(
+          (field) => field.id === this.customFieldIdForExternalId && field.value === externalId
+        )
       );
+
+      return exactMatches;
+    } catch (error: any) {
+      console.error("Error searching tasks by custom field:", error.message);
       return [];
     }
   }
