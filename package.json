@@ -11,7 +11,7 @@
 		"start": "node dist/cli.js",
 		"dev": "ts-node src/cli.ts",
 		"test": "jest",
-		"precommit": "biome format --fix && biome lint --fix"
+		"precommit": "biome format --fix && biome lint --fix && biome check --fix"
 	},
 	"keywords": [
 		"jira",

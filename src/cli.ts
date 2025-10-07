@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 import ora from "ora";
-import { JiraToClickUpMigrator } from "./clickup-migrator";
+import { JiraToClickUpMigrator } from "./clickup";
 import { createEnvFile, loadConfig, validateConfig } from "./config";
 import { JiraToShortcutMigrator } from "./migrator";
 
