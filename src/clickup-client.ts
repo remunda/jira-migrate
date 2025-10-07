@@ -54,6 +54,16 @@ export interface ClickUpUser {
 	email: string;
 }
 
+export interface ClickUpComment {
+	id: string;
+	comment_text: string;
+	user: {
+		id: number;
+		username: string;
+	};
+	date: string;
+}
+
 export interface CreateTaskPayload {
 	name: string;
 	description?: string;
@@ -219,7 +229,8 @@ export class ClickUpClient {
 			} catch (error: any) {
 				console.error(
 					"ClickUp API Error:",
-					error.response?.data || error.message,
+					error.message,
+					error.response?.data,
 				);
 				console.error("Payload that failed:", JSON.stringify(payload, null, 2));
 				throw error;
@@ -335,6 +346,13 @@ export class ClickUpClient {
 	async getTeamMembers(): Promise<ClickUpUser[]> {
 		const response = await this.client.get(`/team/${this.teamId}/user`);
 		return response.data.members || [];
+	}
+
+	async getTaskComments(taskId: string): Promise<ClickUpComment[]> {
+		return this.retryWithBackoff(async () => {
+			const response = await this.client.get(`/task/${taskId}/comment`);
+			return response.data.comments || [];
+		});
 	}
 
 	async addTaskComment(taskId: string, comment: string): Promise<void> {

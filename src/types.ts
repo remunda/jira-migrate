@@ -1,3 +1,14 @@
+export interface JiraComment {
+	id: string;
+	author: {
+		displayName: string;
+		emailAddress?: string;
+	};
+	body: string | Record<string, unknown>; // Can be string or ADF object
+	created: string;
+	updated: string;
+}
+
 export interface JiraIssue {
 	id: string;
 	key: string;
@@ -58,6 +69,10 @@ export interface JiraIssue {
 				};
 			};
 		}>;
+		comment?: {
+			comments: JiraComment[];
+			total: number;
+		};
 	};
 }
 
@@ -103,6 +118,7 @@ export interface MigrationConfig {
 	clickupExternalIdFieldId?: string;
 	clickupStatusMapping?: { [key: string]: string };
 	clickupParentTaskId?: string;
+	clickupSyncComments?: boolean;
 	targetPlatform?: "shortcut" | "clickup";
 	defaultTeamId?: string;
 	defaultProjectId?: string;

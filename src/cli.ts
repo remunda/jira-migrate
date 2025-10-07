@@ -15,6 +15,7 @@ interface MigrateOptions {
 	list?: string;
 	parent?: string;
 	forceUpdate?: boolean;
+	syncComments?: boolean;
 }
 
 interface BulkOptions {
@@ -26,6 +27,7 @@ interface BulkOptions {
 	list?: string;
 	parent?: string;
 	forceUpdate?: boolean;
+	syncComments?: boolean;
 }
 
 const program = new Command();
@@ -64,6 +66,10 @@ program
 	.option(
 		"-u, --only-update",
 		"Only updates existing task, dont create new ones (skip if not found, ClickUp only)",
+	)
+	.option(
+		"-s, --sync-comments",
+		"Sync comments from Jira to ClickUp (ClickUp only)",
 	)
 	.action(async (jiraKey: string, options: MigrateOptions) => {
 		try {
@@ -130,6 +136,7 @@ program
 					options.list,
 					options.parent,
 					options.forceUpdate,
+					options.syncComments,
 				);
 
 				if (result.success) {
@@ -235,6 +242,10 @@ program
 		"-u, --force-update",
 		"Force update existing tasks only (skip if not found, ClickUp only)",
 	)
+	.option(
+		"-s, --sync-comments",
+		"Sync comments from Jira to ClickUp (ClickUp only)",
+	)
 	.action(async (options: BulkOptions) => {
 		try {
 			let jiraKeys: string[] = [];
@@ -332,6 +343,7 @@ program
 					options.list,
 					options.parent,
 					options.forceUpdate,
+					options.syncComments,
 				);
 
 				const successful = results.filter((r) => r.success);

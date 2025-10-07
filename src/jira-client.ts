@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
-import type { JiraIssue, MigrationConfig } from "./types";
+import type { JiraComment, JiraIssue, MigrationConfig } from "./types";
 
 export class JiraClient {
 	private client: AxiosInstance;
@@ -20,27 +20,36 @@ export class JiraClient {
 		});
 	}
 
-	async getIssue(issueKey: string): Promise<JiraIssue> {
+	async getIssue(
+		issueKey: string,
+		includeComments: boolean = false,
+	): Promise<JiraIssue> {
 		try {
+			const fields = [
+				"summary",
+				"description",
+				"issuetype",
+				"status",
+				"priority",
+				"assignee",
+				"reporter",
+				"created",
+				"updated",
+				"labels",
+				"components",
+				"parent",
+				"subtasks",
+				"attachment",
+			];
+
+			if (includeComments) {
+				fields.push("comment");
+			}
+
 			const response = await this.client.get(`/issue/${issueKey}`, {
 				params: {
 					expand: "names,schema",
-					fields: [
-						"summary",
-						"description",
-						"issuetype",
-						"status",
-						"priority",
-						"assignee",
-						"reporter",
-						"created",
-						"updated",
-						"labels",
-						"components",
-						"parent",
-						"subtasks",
-						"attachment",
-					].join(","),
+					fields: fields.join(","),
 				},
 			});
 
@@ -116,6 +125,19 @@ export class JiraClient {
 				error instanceof Error ? error.message : String(error);
 			throw new Error(
 				`Failed to download attachment from ${url}: ${errorMessage}`,
+			);
+		}
+	}
+
+	async getComments(issueKey: string): Promise<JiraComment[]> {
+		try {
+			const response = await this.client.get(`/issue/${issueKey}/comment`);
+			return response.data.comments || [];
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			throw new Error(
+				`Failed to fetch comments for ${issueKey}: ${errorMessage}`,
 			);
 		}
 	}

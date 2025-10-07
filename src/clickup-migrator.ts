@@ -217,6 +217,15 @@ export class JiraToClickUpMigrator {
 		return text;
 	}
 
+	private formatJiraComment(comment: import("./types").JiraComment): string {
+		const author = comment.author.displayName;
+		const date = new Date(comment.created).toLocaleString();
+		const body = this.parseAdfDescription(comment.body);
+
+		// Add a unique identifier to track synced comments
+		return `**${author}** (${date}):\n${body}\n\n---\n*[Jira Comment ID: ${comment.id}]*`;
+	}
+
 	private async formatDescription(issue: JiraIssue): Promise<string> {
 		let description = `**Original JIRA Issue:** [${issue.key}](${this.config.jiraBaseUrl}/browse/${issue.key})\n\n`;
 		description += "---\n\n";
@@ -274,9 +283,13 @@ export class JiraToClickUpMigrator {
 		listId?: string,
 		parentTaskId?: string,
 		forceUpdate?: boolean,
+		syncComments?: boolean,
 	): Promise<ClickUpMigrationResult> {
 		try {
-			const issue = await this.jiraClient.getIssue(jiraKey);
+			// Include comments if sync is enabled or configured
+			const shouldSyncComments =
+				syncComments ?? this.config.clickupSyncComments ?? false;
+			const issue = await this.jiraClient.getIssue(jiraKey, shouldSyncComments);
 
 			if (!issue) {
 				return {
@@ -429,9 +442,11 @@ export class JiraToClickUpMigrator {
 									attachment.filename,
 								);
 								console.log(`  ✓ ${attachment.filename} uploaded`);
-							} catch (error: any) {
+							} catch (error: unknown) {
+								const errorMessage =
+									error instanceof Error ? error.message : String(error);
 								console.error(
-									`  ✗ Failed to upload ${attachment.filename}: ${error.message}`,
+									`  ✗ Failed to upload ${attachment.filename}: ${errorMessage}`,
 								);
 							}
 						}
@@ -439,6 +454,63 @@ export class JiraToClickUpMigrator {
 						console.log(
 							`All ${existingAttachments.length} attachment(s) already exist, skipping upload`,
 						);
+					}
+				}
+
+				// Sync comments if enabled
+				if (shouldSyncComments && issue.fields.comment?.comments) {
+					const comments = issue.fields.comment.comments;
+					if (comments.length > 0) {
+						console.log(`Syncing ${comments.length} comment(s)...`);
+
+						// Get existing ClickUp comments to avoid duplication
+						const existingClickUpComments =
+							await this.clickupClient.getTaskComments(updatedTask.id);
+
+						// Extract Jira comment IDs from existing ClickUp comments
+						const syncedJiraCommentIds = new Set<string>();
+						for (const clickupComment of existingClickUpComments) {
+							const match = clickupComment.comment_text.match(
+								/\[Jira Comment ID: ([^\]]+)\]/,
+							);
+							if (match) {
+								syncedJiraCommentIds.add(match[1]);
+							}
+						}
+
+						// Only sync comments that haven't been synced yet
+						let syncedCount = 0;
+						let skippedCount = 0;
+
+						for (const comment of comments) {
+							if (syncedJiraCommentIds.has(comment.id)) {
+								skippedCount++;
+								continue;
+							}
+
+							try {
+								const formattedComment = this.formatJiraComment(comment);
+								await this.clickupClient.addTaskComment(
+									updatedTask.id,
+									formattedComment,
+								);
+								syncedCount++;
+								console.log(
+									`  ✓ Synced comment from ${comment.author.displayName}`,
+								);
+							} catch (error: unknown) {
+								const errorMessage =
+									error instanceof Error ? error.message : String(error);
+								console.error(`  ✗ Failed to sync comment: ${errorMessage}`);
+							}
+						}
+
+						if (skippedCount > 0) {
+							console.log(
+								`  ℹ Skipped ${skippedCount} already synced comment(s)`,
+							);
+						}
+						console.log(`  ✓ Synced ${syncedCount} new comment(s)`);
 					}
 				}
 
@@ -509,11 +581,38 @@ export class JiraToClickUpMigrator {
 								attachment.filename,
 							);
 							console.log(`  ✓ ${attachment.filename} uploaded`);
-						} catch (error: any) {
+						} catch (error: unknown) {
+							const errorMessage =
+								error instanceof Error ? error.message : String(error);
 							console.error(
-								`  ✗ Failed to upload ${attachment.filename}: ${error.message}`,
+								`  ✗ Failed to upload ${attachment.filename}: ${errorMessage}`,
 							);
 						}
+					}
+				}
+
+				// Sync comments if enabled
+				if (shouldSyncComments && issue.fields.comment?.comments) {
+					const comments = issue.fields.comment.comments;
+					if (comments.length > 0) {
+						console.log(`Syncing ${comments.length} comment(s)...`);
+						for (const comment of comments) {
+							try {
+								const formattedComment = this.formatJiraComment(comment);
+								await this.clickupClient.addTaskComment(
+									task.id,
+									formattedComment,
+								);
+								console.log(
+									`  ✓ Synced comment from ${comment.author.displayName}`,
+								);
+							} catch (error: unknown) {
+								const errorMessage =
+									error instanceof Error ? error.message : String(error);
+								console.error(`  ✗ Failed to sync comment: ${errorMessage}`);
+							}
+						}
+						console.log(`  ✓ Synced ${comments.length} comment(s)`);
 					}
 				}
 
@@ -525,11 +624,13 @@ export class JiraToClickUpMigrator {
 					wasUpdate: false,
 				};
 			}
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
 			return {
 				success: false,
 				jiraKey,
-				error: error.message,
+				error: errorMessage,
 			};
 		}
 	}
@@ -539,6 +640,7 @@ export class JiraToClickUpMigrator {
 		listId?: string,
 		parentTaskId?: string,
 		forceUpdate?: boolean,
+		syncComments?: boolean,
 	): Promise<ClickUpMigrationResult[]> {
 		const results: ClickUpMigrationResult[] = [];
 
@@ -548,6 +650,7 @@ export class JiraToClickUpMigrator {
 				listId,
 				parentTaskId,
 				forceUpdate,
+				syncComments,
 			);
 			results.push(result);
 

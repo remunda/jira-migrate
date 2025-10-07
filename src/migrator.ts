@@ -129,7 +129,7 @@ export class JiraToShortcutMigrator {
 		const existing = await this.shortcutClient.findEpicByExternalId(
 			jiraIssue.key,
 		);
-		let result;
+		let result: { id: number; app_url: string } | null;
 
 		if (existing) {
 			console.log(
@@ -216,7 +216,7 @@ export class JiraToShortcutMigrator {
 		const existing = await this.shortcutClient.findStoryByExternalId(
 			jiraIssue.key,
 		);
-		let result: ShortcutStoryResponse | null;
+		let result: { id: number; app_url: string } | null;
 
 		if (existing) {
 			console.log(
