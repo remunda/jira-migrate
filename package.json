@@ -1,9 +1,14 @@
 {
-	"name": "jira-migrate",
+	"name": "@remunda/jira-migrate",
 	"version": "1.0.0",
 	"description": "CLI tool for migrating JIRA items (Epics, Features, User Stories) to Shortcut.com or ClickUp",
 	"main": "dist/index.js",
-	"bin": "dist/cli.js",
+	"bin": {
+		"jira-migrate": "dist/cli.js"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"scripts": {
 		"build": "tsc",
 		"start": "node dist/cli.js",
@@ -22,7 +27,7 @@
 		"import",
 		"export"
 	],
-	"author": "remunda",
+	"author": "remunda@gmail.com",
 	"license": "CC-BY-SA-4.0",
 	"repository": {
 		"type": "git",

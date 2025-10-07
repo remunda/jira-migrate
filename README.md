@@ -9,7 +9,7 @@ CLI tool for migrating tasks from JIRA to Shortcut.com or ClickUp. Supports migr
 ### Option 1: Using npx (Recommended)
 
 ```bash
-npx jira-migrate setup
+npx @remunda/jira-migrate setup
 ```
 
 ### Option 2: Development Setup
@@ -25,7 +25,7 @@ yarn build
 
 ```bash
 # Using npx
-npx jira-migrate setup
+npx @remunda/jira-migrate setup
 
 # Or in development
 yarn dev setup
@@ -62,7 +62,7 @@ CLICKUP_PARENT_TASK_ID=86c5v9c20  # Optional, actual task ID (double-click task 
 
 ```bash
 # Using npx
-npx jira-migrate test
+npx @remunda/jira-migrate test
 
 # Or in development
 yarn dev test
@@ -72,10 +72,10 @@ yarn dev test
 
 ```bash
 # Using npx
-npx jira-migrate inspect PROJ-123
-npx jira-migrate migrate PROJ-123
-npx jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
-npx jira-migrate bulk --file jira-keys.txt
+npx @remunda/jira-migrate inspect PROJ-123
+npx @remunda/jira-migrate migrate PROJ-123
+npx @remunda/jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
+npx @remunda/jira-migrate bulk --file jira-keys.txt
 
 # Or in development
 yarn dev inspect PROJ-123
@@ -111,7 +111,7 @@ yarn dev bulk --file jira-keys.txt
 ### Inspect Issue
 ```bash
 # Find out type and details before migration
-npx jira-migrate inspect PROJ-123
+npx @remunda/jira-migrate inspect PROJ-123
 
 # Or in development
 yarn dev inspect PROJ-123
@@ -120,41 +120,41 @@ yarn dev inspect PROJ-123
 ### Single Issue Migration
 ```bash
 # Basic migration
-npx jira-migrate migrate PROJ-123
+npx @remunda/jira-migrate migrate PROJ-123
 
 # Dry run (shows what will happen without executing)
-npx jira-migrate migrate PROJ-123 --dry-run
+npx @remunda/jira-migrate migrate PROJ-123 --dry-run
 
 # With assignment to current iteration (Shortcut only)
-npx jira-migrate migrate PROJ-123 --current-iteration
+npx @remunda/jira-migrate migrate PROJ-123 --current-iteration
 
 # With assignment to specific iteration (Shortcut only)
-npx jira-migrate migrate PROJ-123 --iteration 58
+npx @remunda/jira-migrate migrate PROJ-123 --iteration 58
 
 # Migrate to specific list (ClickUp only)
-npx jira-migrate migrate PROJ-123 --list 87654321
+npx @remunda/jira-migrate migrate PROJ-123 --list 87654321
 
 # Assign to parent task (ClickUp - use actual task ID, not URL number!)
 # Double-click the task ID in ClickUp to see the actual ID
-npx jira-migrate migrate PROJ-123 --parent 86c5v9c20
+npx @remunda/jira-migrate migrate PROJ-123 --parent 86c5v9c20
 ```
 
 ### Bulk Migration
 ```bash
 # Migrate multiple issues at once
-npx jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
+npx @remunda/jira-migrate bulk --keys PROJ-123 PROJ-124 PROJ-125
 
 # Migrate from file (one key per line)
-npx jira-migrate bulk --file jira-keys.txt
+npx @remunda/jira-migrate bulk --file jira-keys.txt
 
 # Dry run for bulk migration
-npx jira-migrate bulk --file jira-keys.txt --dry-run
+npx @remunda/jira-migrate bulk --file jira-keys.txt --dry-run
 
 # With iteration assignment (Shortcut)
-npx jira-migrate bulk --keys PROJ-123 PROJ-124 --current-iteration
+npx @remunda/jira-migrate bulk --keys PROJ-123 PROJ-124 --current-iteration
 
 # Assign all to parent task (ClickUp - use actual task ID!)
-npx jira-migrate bulk --keys PROJ-123 PROJ-124 --parent 86c5v9c20
+npx @remunda/jira-migrate bulk --keys PROJ-123 PROJ-124 --parent 86c5v9c20
 ```
 
 ### Re-migration (Update)
