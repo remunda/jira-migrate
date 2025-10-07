@@ -5,6 +5,13 @@ on:
         branches:
             - main
 
+    workflow_run:
+        workflows: ["CI"]
+        types:
+            - completed
+        branches:
+            - main
+
 permissions:
     contents: write
     issues: write
