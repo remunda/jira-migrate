@@ -135,12 +135,7 @@ export class ClickUpClient {
 
 	async createTask(payload: CreateTaskPayload): Promise<ClickUpTask> {
 		return this.retryWithBackoff(async () => {
-			try {
-				console.log(
-					"Creating task with payload:",
-					JSON.stringify(payload, null, 2),
-				);
-
+			try {				
 				const response = await this.client.post(
 					`/list/${this.listId}/task`,
 					payload,

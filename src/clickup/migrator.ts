@@ -75,7 +75,11 @@ export class JiraToClickUpMigrator {
 				return user.id;
 			}
 		} catch (error) {
-			console.error(`Error finding ClickUp user by email ${email}:`, error);
+			const errorMessage = error instanceof Error ? error.message : "";
+			console.error(
+				`Error finding ClickUp user by email ${email}:`,
+				errorMessage,
+			);
 		}
 
 		return undefined;

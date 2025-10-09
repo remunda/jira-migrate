@@ -206,7 +206,7 @@ program
 
 				if (result.success) {
 					migrationSpinner.succeed(`Successfully migrated ${jiraKey}`);
-					console.log(chalk.green(`Shortcut URL: ${result.shortcutUrl}`));
+					console.log(chalk.green(`Shortcut URL: ${result.shortcutUrl} (${jiraKey})`));
 					if (iterationId) {
 						console.log(chalk.blue(`Assigned to iteration: ${iterationId}`));
 					}
