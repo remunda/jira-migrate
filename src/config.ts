@@ -21,7 +21,7 @@ export function loadConfig(): MigrationConfig {
 		clickupListId: process.env.CLICKUP_LIST_ID || "",
 		clickupExternalIdFieldId: process.env.CLICKUP_EXTERNAL_ID_FIELD_ID || "",
 		clickupParentTaskId: process.env.CLICKUP_PARENT_TASK_ID || "",
-		clickupSyncComments: process.env.CLICKUP_SYNC_COMMENTS === "true" || false,
+		clickupSyncComments: process.env.CLICKUP_SYNC_COMMENTS !== "false", // Default to true, can be disabled
 		targetPlatform:
 			(process.env.TARGET_PLATFORM as "shortcut" | "clickup") || "shortcut",
 		defaultTeamId: process.env.DEFAULT_SHORTCUT_TEAM_ID,

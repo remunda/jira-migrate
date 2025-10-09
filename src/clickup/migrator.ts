@@ -93,9 +93,9 @@ export class JiraToClickUpMigrator {
 		syncComments?: boolean,
 	): Promise<ClickUpMigrationResult> {
 		try {
-			// Include comments if sync is enabled or configured
+			// Include comments if sync is enabled or configured (default: true)
 			const shouldSyncComments =
-				syncComments ?? this.config.clickupSyncComments ?? false;
+				syncComments ?? this.config.clickupSyncComments ?? true;
 			const issue = await this.jiraClient.getIssue(jiraKey, shouldSyncComments);
 
 			if (!issue) {

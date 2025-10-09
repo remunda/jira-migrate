@@ -15,7 +15,7 @@ interface MigrateOptions {
 	list?: string;
 	parent?: string;
 	forceUpdate?: boolean;
-	syncComments?: boolean;
+	skipComments?: boolean;
 }
 
 interface BulkOptions {
@@ -27,7 +27,7 @@ interface BulkOptions {
 	list?: string;
 	parent?: string;
 	forceUpdate?: boolean;
-	syncComments?: boolean;
+	skipComments?: boolean;
 }
 
 const program = new Command();
@@ -68,8 +68,8 @@ program
 		"Only updates existing task, dont create new ones (skip if not found, ClickUp only)",
 	)
 	.option(
-		"-s, --sync-comments",
-		"Sync comments from Jira to ClickUp (ClickUp only)",
+		"-s, --skip-comments",
+		"Skip syncing comments from Jira to ClickUp (ClickUp only, comments are synced by default)",
 	)
 	.action(async (jiraKey: string, options: MigrateOptions) => {
 		try {
@@ -138,7 +138,7 @@ program
 					options.list,
 					options.parent,
 					options.forceUpdate,
-					options.syncComments,
+					!options.skipComments, // Invert: sync by default unless skip is specified
 				);
 
 				if (result.success) {
@@ -206,7 +206,9 @@ program
 
 				if (result.success) {
 					migrationSpinner.succeed(`Successfully migrated ${jiraKey}`);
-					console.log(chalk.green(`Shortcut URL: ${result.shortcutUrl} (${jiraKey})`));
+					console.log(
+						chalk.green(`Shortcut URL: ${result.shortcutUrl} (${jiraKey})`),
+					);
 					if (iterationId) {
 						console.log(chalk.blue(`Assigned to iteration: ${iterationId}`));
 					}
@@ -247,8 +249,8 @@ program
 		"Force update existing tasks only (skip if not found, ClickUp only)",
 	)
 	.option(
-		"-s, --sync-comments",
-		"Sync comments from Jira to ClickUp (ClickUp only)",
+		"-s, --skip-comments",
+		"Skip syncing comments from Jira to ClickUp (ClickUp only, comments are synced by default)",
 	)
 	.action(async (options: BulkOptions) => {
 		try {
@@ -350,7 +352,7 @@ program
 					options.list,
 					options.parent,
 					options.forceUpdate,
-					options.syncComments,
+					!options.skipComments, // Invert: sync by default unless skip is specified
 				);
 
 				const successful = results.filter((r) => r.success);
